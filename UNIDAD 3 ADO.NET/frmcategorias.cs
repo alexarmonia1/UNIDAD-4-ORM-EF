@@ -1,4 +1,7 @@
-﻿using System;
+﻿
+using UNIDAD_3_ADO.NET.Models;
+using System.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,6 +17,7 @@ namespace UNIDAD_3_ADO.NET
 {
     public partial class frmcategorias : Form
     {
+        int idCategoriaSeleccionada;
         string connectionString = "Server=localhost;Database=primeraactividad;Trusted_Connection=True;TrustServerCertificate=True;";
         int idSeleccionado = 0;
 
@@ -25,15 +29,9 @@ namespace UNIDAD_3_ADO.NET
 
         private void CargarCategoria()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (var db = new PrimeraactividadContext())
             {
-                string query = "SELECT * FROM categorias";
-                conn.Open();
-                SqlCommand cmd = new SqlCommand(query, conn);
-                SqlDataReader reader = cmd.ExecuteReader();
-                DataTable dt = new DataTable();
-                dt.Load(reader);
-                dgvcategorias.DataSource = dt;
+                dgvcategorias.DataSource = db.Categorias.ToList();
             }
         }
 
@@ -41,32 +39,26 @@ namespace UNIDAD_3_ADO.NET
 
         private void frmcategorias_Load(object sender, EventArgs e)
         {
-
+            CargarCategoria();
         }
 
         private void btnInsertar_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreCategoria.Text))
+            using (var db = new PrimeraactividadContext())
             {
-                MessageBox.Show("Por favor, complete el campo de nombre de categoría.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                string query = "INSERT INTO categorias(nombrecategoria) VALUES (@Nombre)";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Nombre", txtNombreCategoria.Text);
+                Categoria nueva = new Categoria()
+                {
+                    Nombrecategoria = txtNombreCategoria.Text
+                };
 
-
-                MessageBox.Show("Categoria insertada correctamente.");
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                conn.Close();
+                db.Categorias.Add(nueva);
+                db.SaveChanges();
             }
+
             CargarCategoria();
+            MessageBox.Show("categoria agregada");
             LimpiarCampos();
+            
         }
 
         private void LimpiarCampos()
@@ -76,33 +68,20 @@ namespace UNIDAD_3_ADO.NET
 
         private void btnActualizar_Click(object sender, EventArgs e)
         {
-            if (idSeleccionado == 0)
+            using (var db = new PrimeraactividadContext())
             {
-                MessageBox.Show("Por favor, seleccione una categoría para actualizar.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
+                var categoria = db.Categorias.Find(idCategoriaSeleccionada);
+
+                if (categoria != null)
+                {
+                    categoria.Nombrecategoria = txtNombreCategoria.Text;
+                    db.SaveChanges();
+                }
             }
-            if (string.IsNullOrWhiteSpace(txtNombreCategoria.Text))
-            {
-                MessageBox.Show("Por favor, complete el campo de nombre de categoría.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                string query = "UPDATE categorias SET nombrecategoria = @Nombre WHERE categoriaID = @Id";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Nombre", txtNombreCategoria.Text);
-                cmd.Parameters.AddWithValue("@Id", idSeleccionado);
-                MessageBox.Show("Categoría actualizada correctamente.");
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                conn.Close();
-            }
+
             CargarCategoria();
             LimpiarCampos();
+            MessageBox.Show("Categoría actualizada correctamente");
 
         }
 
@@ -118,25 +97,22 @@ namespace UNIDAD_3_ADO.NET
 
         private void btnEliminar_Click(object sender, EventArgs e)
         {
-            if (idSeleccionado <= 0)
+            int id = Convert.ToInt32(dgvcategorias.CurrentRow.Cells[0].Value);
+
+            using (var db = new PrimeraactividadContext())
             {
-                MessageBox.Show("Por favor, seleccione una categoría para eliminar.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
+                var categoria = db.Categorias.Find(id);
+
+                if (categoria != null)
+                {
+                    db.Categorias.Remove(categoria);
+                    db.SaveChanges();
+                }
             }
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                string query = "DELETE FROM categorias WHERE categoriaID = @Id";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Id", idSeleccionado);
-                MessageBox.Show("Categoría eliminada correctamente.");
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                conn.Close();
-            }
+
             CargarCategoria();
-            LimpiarCampos();
+            MessageBox.Show("Categoria eliminada");
+            LimpiarCampos() ;
         }
     }
 }
