@@ -149,7 +149,7 @@
             Controls.Add(label1);
             Name = "frmproveedores";
             Text = "frmproveedores";
-            Load += frmproveedores_Load;
+            Load += frmproveedores_Load_1;
             ((System.ComponentModel.ISupportInitialize)dgvProveedores).EndInit();
             ResumeLayout(false);
             PerformLayout();

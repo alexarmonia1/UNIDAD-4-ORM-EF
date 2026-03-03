@@ -1,4 +1,7 @@
-﻿using System;
+﻿
+using UNIDAD_3_ADO.NET.Models;
+using System.Linq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -24,17 +27,13 @@ namespace UNIDAD_3_ADO.NET
 
         private void CargarProveedores()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (var db = new PrimeraactividadContext())
             {
-                string query = "SELECT * FROM proveedores";
-                conn.Open();
-                SqlCommand cmd = new SqlCommand(query, conn);
-                SqlDataReader reader = cmd.ExecuteReader();
-                DataTable dt = new DataTable();
-                dt.Load(reader);
-                dgvProveedores.DataSource = dt;
+                dgvProveedores.DataSource = db.Proveedores.ToList();
             }
         }
+
+
 
         private void textBox3_TextChanged(object sender, EventArgs e)
         {
@@ -45,35 +44,24 @@ namespace UNIDAD_3_ADO.NET
         {
 
         }
-
-        private void frmproveedores_Load(object sender, EventArgs e)
-        {
-
-        }
-
+       
         private void btnInsertar_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreProveedor.Text) || string.IsNullOrWhiteSpace(txtTelefono.Text) ||
-                string.IsNullOrWhiteSpace(txtDireccion.Text))
+            using (var db = new PrimeraactividadContext())
             {
-                MessageBox.Show("Por favor, complete todos los campos.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                string query = "INSERT INTO proveedores (nombreproveedor, telefono, direccion) VALUES (@Nombre, @Telefono, @Direccion)";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Nombre", txtNombreProveedor.Text);
-                cmd.Parameters.AddWithValue("@Telefono", txtTelefono.Text);
-                cmd.Parameters.AddWithValue("@Direccion", txtDireccion.Text);
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                MessageBox.Show("Proveedor insertado correctamente.");
+                Proveedore nuevo = new Proveedore()
+                {
+                    Nombreproveedor = txtNombreProveedor.Text,
+                    Telefono = txtTelefono.Text,
+                    Direccion = txtDireccion.Text,
+                };
 
+                db.Proveedores.Add(nuevo);
+                db.SaveChanges();
             }
+
             CargarProveedores();
+            MessageBox.Show("proveedor agregado");
             LimpiarCampos();
         }
         private void LimpiarCampos()
@@ -85,30 +73,24 @@ namespace UNIDAD_3_ADO.NET
 
         private void btnActualizar_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreProveedor.Text) || string.IsNullOrWhiteSpace(txtTelefono.Text) ||
-                string.IsNullOrWhiteSpace(txtDireccion.Text))
-            {
-                MessageBox.Show("Por favor, complete todos los campos.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }
-            if (idseleccionado <= 0)
-                return;
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            int id = Convert.ToInt32(dgvProveedores.CurrentRow.Cells[0].Value);
+
+            using (var db = new PrimeraactividadContext())
             {
-                string query = "UPDATE proveedores SET nombreproveedor =@Nombre, telefono= @Telefono, direccion =@Direccion WHERE proveedorID = @Id";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Nombre", txtNombreProveedor.Text);
-                cmd.Parameters.AddWithValue("@Telefono", txtTelefono.Text);
-                cmd.Parameters.AddWithValue("@Direccion", txtDireccion.Text);
-                cmd.Parameters.AddWithValue("@Id", idseleccionado);
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                MessageBox.Show("Proveedor actualizado correctamente.");
+                var proveedore = db.Proveedores.Find(id);
+
+                if (proveedore != null)
+                {
+                    proveedore.Nombreproveedor = txtNombreProveedor.Text;
+                    proveedore.Telefono = txtTelefono.Text;
+                    proveedore.Direccion = txtDireccion.Text;
+
+                    db.SaveChanges();
+                }
             }
             CargarProveedores();
+            MessageBox.Show("proveedor actualizado");
             LimpiarCampos();
 
         }
@@ -127,31 +109,28 @@ namespace UNIDAD_3_ADO.NET
 
         private void txtEliminar_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNombreProveedor.Text) || string.IsNullOrWhiteSpace(txtTelefono.Text) ||
-                string.IsNullOrWhiteSpace(txtDireccion.Text))
-            {
-                MessageBox.Show("Por favor, seleccione un proveedor para eliminar.", "aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                return;
-            }   
-            if (MessageBox.Show("¿Está seguro de que desea eliminar este proveedor?", "Confirmar eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.No)
-                return;
-            if (idseleccionado <= 0)
-                return;
+            int id = Convert.ToInt32(dgvProveedores.CurrentRow.Cells[0].Value);
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (var db = new PrimeraactividadContext())
             {
-                string query = "DELETE FROM proveedores WHERE proveedorID = @Id";
-                SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@Id", idseleccionado);
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                MessageBox.Show("Proveedor eliminado correctamente.");
-                
+                var proveedore = db.Proveedores.Find(id);
+
+                if (proveedore != null)
+                {
+                    db.Proveedores.Remove(proveedore);
+                    db.SaveChanges();
+                }
             }
+
             CargarProveedores();
+            MessageBox.Show("proveedor eliminado");
+            
             LimpiarCampos();
+        }
+
+        private void frmproveedores_Load_1(object sender, EventArgs e)
+        {
+            CargarProveedores();
         }
     }
 }
